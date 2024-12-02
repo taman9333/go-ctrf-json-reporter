@@ -24,6 +24,7 @@ func ParseTestResults(r io.Reader, verbose bool, env *ctrf.Environment) (*ctrf.R
 	var testEvents []TestEvent
 	decoder := json.NewDecoder(r)
 
+	// Decode all test events
 	for {
 		var event TestEvent
 		if err := decoder.Decode(&event); err == io.EOF {
@@ -36,6 +37,10 @@ func ParseTestResults(r io.Reader, verbose bool, env *ctrf.Environment) (*ctrf.R
 
 	report := ctrf.NewReport("gotest", env)
 	report.Results.Summary.Start = time.Now().UnixNano() / int64(time.Millisecond)
+
+	// Map to track tests that failed and later passed
+	testStatuses := make(map[string]string) // Key: "<Package>:<TestName>", Value: "fail" or "pass"
+
 	for i, event := range testEvents {
 		if verbose {
 			jsonEvent, err := json.Marshal(event)
@@ -47,6 +52,8 @@ func ParseTestResults(r io.Reader, verbose bool, env *ctrf.Environment) (*ctrf.R
 		if event.Test == "" {
 			continue
 		}
+
+		// Calculate start time and duration
 		startTime, err := parseTimeString(event.Time)
 		duration := secondsToMillis(event.Elapsed)
 		if err != nil {
@@ -60,18 +67,33 @@ func ParseTestResults(r io.Reader, verbose bool, env *ctrf.Environment) (*ctrf.R
 				report.Results.Summary.Stop = endTime
 			}
 		}
+
+		// Build test key for tracking status
+		testKey := fmt.Sprintf("%s:%s", event.Package, event.Test)
+
+		// Process test events
 		if event.Action == "pass" {
 			report.Results.Summary.Tests++
 			report.Results.Summary.Passed++
+			flake := false
+
+			// Check if this test previously failed
+			if testStatuses[testKey] == "fail" {
+				flake = true
+			}
+
 			report.Results.Tests = append(report.Results.Tests, &ctrf.TestResult{
 				Suite:    event.Package,
 				Name:     event.Test,
 				Status:   ctrf.TestPassed,
 				Duration: duration,
+				Flake:    flake, // Set the Flake flag
 			})
+			testStatuses[testKey] = "pass" // Update status to passed
 		} else if event.Action == "fail" {
 			report.Results.Summary.Tests++
 			report.Results.Summary.Failed++
+
 			report.Results.Tests = append(report.Results.Tests, &ctrf.TestResult{
 				Suite:    event.Package,
 				Name:     event.Test,
@@ -79,6 +101,7 @@ func ParseTestResults(r io.Reader, verbose bool, env *ctrf.Environment) (*ctrf.R
 				Duration: duration,
 				Message:  getMessagesForTest(testEvents, i, event.Package, event.Test),
 			})
+			testStatuses[testKey] = "fail" // Update status to failed
 		} else if event.Action == "skip" {
 			report.Results.Summary.Tests++
 			report.Results.Summary.Skipped++
@@ -89,8 +112,8 @@ func ParseTestResults(r io.Reader, verbose bool, env *ctrf.Environment) (*ctrf.R
 				Duration: duration,
 			})
 		}
-
 	}
+
 	return report, nil
 }
 func getMessagesForTest(testEvents []TestEvent, index int, packageName, testName string) string {

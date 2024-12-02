@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ctrf-io/go-ctrf-json-reporter/ctrf"
+	"github.com/taman9333/go-ctrf-json-reporter/ctrf"
 )
 
 type TestEvent struct {

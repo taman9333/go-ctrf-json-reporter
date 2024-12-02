@@ -3,9 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/ctrf-io/go-ctrf-json-reporter/ctrf"
-	"github.com/ctrf-io/go-ctrf-json-reporter/reporter"
 	"os"
+
+	"github.com/taman9333/go-ctrf-json-reporter/ctrf"
+	"github.com/taman9333/go-ctrf-json-reporter/reporter"
 )
 
 func main() {

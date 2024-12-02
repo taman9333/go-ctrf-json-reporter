@@ -196,7 +196,7 @@ type TestResult struct {
 	Tags       []string      `json:"tags,omitempty"`
 	Type       string        `json:"type,omitempty"`
 	Filepath   string        `json:"filepath,omitempty"`
-	Retry      int           `json:"retry,omitempty"`
+	Retry      int           `json:"retries,omitempty"`
 	Flake      bool          `json:"flaky,omitempty"`
 	Browser    string        `json:"browser,omitempty"`
 	Device     string        `json:"device,omitempty"`

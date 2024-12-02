@@ -1,4 +1,4 @@
-module github.com/ctrf-io/go-ctrf-json-reporter
+module github.com/taman9333/go-ctrf-json-reporter
 
 go 1.19
 
